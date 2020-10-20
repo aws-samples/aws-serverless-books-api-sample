@@ -1,0 +1,31 @@
+{
+    "version": "0.2",
+    "env": {
+      "exported-variables": [
+        "API_ENDPOINT",
+        "USER_POOL_ID",
+        "USER_POOL_CLIENT_ID",
+        "TABLE"
+      ]
+    },
+    "phases": {
+      "install": {
+        "runtime-versions": {
+          "python": "3.8"
+        },
+        "commands": [
+          "pip3 install --upgrade aws-sam-cli"
+        ]
+      },
+      "build": {
+        "commands": [
+          "aws s3 cp $ARTIFACTS_PATH ./template.yml",
+          "sam deploy --template-file template.yml --stack-name $STACK_NAME --parameter-overrides ParameterKey=Stage,ParameterValue=$ENVIRONMENT --capabilities CAPABILITY_IAM",
+          "export API_ENDPOINT=$(aws cloudformation describe-stacks --stack-name $STACK_NAME --query 'Stacks[].Outputs[?OutputKey==`ApiEndpoint`].OutputValue' --output text)",
+          "export USER_POOL_ID=$(aws cloudformation describe-stacks --stack-name $STACK_NAME --query 'Stacks[].Outputs[?OutputKey==`UserPoolId`].OutputValue' --output text)",
+          "export USER_POOL_CLIENT_ID=$(aws cloudformation describe-stacks --stack-name $STACK_NAME --query 'Stacks[].Outputs[?OutputKey==`UserPoolClientId`].OutputValue' --output text)",
+          "export TABLE=$(aws cloudformation describe-stacks --stack-name $STACK_NAME --query 'Stacks[].Outputs[?OutputKey==`BooksTable`].OutputValue' --output text)"
+        ]
+      }
+    }
+  }

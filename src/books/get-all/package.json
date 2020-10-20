@@ -1,0 +1,36 @@
+{
+  "name": "books-get-all",
+  "version": "1.0.0",
+  "description": "Lambda function to get all books",
+  "main": "index.js",
+  "scripts": {
+    "prebuild": "mkdir -p dist",
+    "copy-deps": "cp -r node_modules dist",
+    "build-dev": "tsc",
+    "build": "npm run prebuild && npm i && tsc && npm prune --production && npm run copy-deps",
+    "test": "mocha -r ts-node/register ./tests/*.spec.ts"
+  },
+  "author": "Amazon Web Services",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.64",
+    "@types/chai": "^4.2.13",
+    "@types/mocha": "^8.0.3",
+    "@types/node": "^14.0.27",
+    "@types/sinon": "^9.0.8",
+    "@types/sinon-chai": "^3.2.5",
+    "@types/uuid": "^8.3.0",
+    "aws-sdk": "^2.729.0",
+    "aws-sdk-mock": "^5.1.0",
+    "chai": "^4.2.0",
+    "mocha": "^8.1.3",
+    "sinon": "^9.2.0",
+    "sinon-chai": "^3.5.0",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.7",
+    "uuid": "^8.3.1"
+  },
+  "dependencies": {
+    "aws-xray-sdk-core": "^3.1.0"
+  }
+}

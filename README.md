@@ -1,8 +1,20 @@
-# API Gateway using AWS SAM
+# API Gateway using AWS SAM <!-- omit in toc -->
 
 This repository contains a Books API powered by Amazon API Gateway, AWS Lambda and Amazon DynamoDB. Involved resources are defined and provisioned using AWS SAM.
 
 For CI/CD it assumes there are two environments: staging and production. Pipeline is implemented using AWS CDK.
+
+**Table of contents:**
+
+- [Architecture](#architecture)
+- [Requirements](#requirements)
+- [Project Structure](#project-structure)
+- [Using SAM to deploy the app](#using-sam-to-deploy-the-app)
+- [Testing your lambda locally](#testing-your-lambda-locally)
+- [Monitoring](#monitoring)
+- [Tracing](#tracing)
+- [CI/CD](#cicd)
+- [Getting a token to manually test the API](#getting-a-token-to-manually-test-the-api)
 
 ## Architecture
 
@@ -200,10 +212,14 @@ Since `template.yml` took care of provisioning all the necessary components from
 
   ![Postman / Create new book](images/postman3.png)
 
-## Want to contribute?
+## Want to contribute? <!-- omit in toc -->
 
 Check our [contribution guidelines](CONTRIBUTING.md) before submitting a pull request. Any contribution must be done to the `develop` branch.
 
-## License
+## Security <!-- omit in toc -->
+
+See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
+
+## License <!-- omit in toc -->
 
 This library is licensed under the MIT-0 License. See the LICENSE file.

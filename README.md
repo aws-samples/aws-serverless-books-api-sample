@@ -171,7 +171,7 @@ NOTES:
 * Artifacts which are specific for our application are stored in an Amazon S3 bucket called `books-api-artifacts-{accountId}`.
 * These buckets are created by our CDK script and hence, they cannot exist before running it.
 * To successfully connect to Github:
-  * You must create a git hub connection - [click here to learn more](https://docs.aws.amazon.com/codepipeline/latest/userguide/connections-github.html)
+  * You must create a GitHub connection ([click here to learn how](https://docs.aws.amazon.com/codepipeline/latest/userguide/connections-github.html))
 * Build stage doesn't only generate our API artifacts, it also run a suite of unit tests for our AWS Lambda functions.
 * Change the variables `gitRepo`, `gitOwner` and `gitBranch` based on your git config.
 

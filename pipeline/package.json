@@ -18,12 +18,12 @@
     "typescript": "~3.7.2"
   },
   "dependencies": {
-    "@aws-cdk/aws-codebuild": "^1.57.0",
-    "@aws-cdk/aws-codepipeline": "^1.57.0",
-    "@aws-cdk/aws-codepipeline-actions": "^1.57.0",
-    "@aws-cdk/aws-s3": "^1.57.0",
-    "@aws-cdk/aws-ssm": "^1.57.0",
-    "@aws-cdk/core": "1.57.0",
-    "source-map-support": "^0.5.16"
+    "@aws-cdk/assets": "^1.105.0",
+    "@aws-cdk/aws-codebuild": "^1.105.0",
+    "@aws-cdk/aws-codepipeline": "^1.105.0",
+    "@aws-cdk/aws-codepipeline-actions": "^1.105.0",
+    "@aws-cdk/aws-s3": "^1.105.0",
+    "@aws-cdk/core": "^1.105.0",
+    "source-map-support": "^0.5.19"
   }
 }

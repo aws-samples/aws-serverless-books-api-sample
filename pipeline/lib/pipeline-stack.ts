@@ -2,7 +2,7 @@ import * as cdk from '@aws-cdk/core';
 import * as codebuild from '@aws-cdk/aws-codebuild';
 import * as codepipeline from '@aws-cdk/aws-codepipeline';
 import * as codepipeline_actions from '@aws-cdk/aws-codepipeline-actions';
-import * as ssm from '@aws-cdk/aws-ssm';
+
 
 import { CodeBuildAction, GitHubSourceAction, ManualApprovalAction } from '@aws-cdk/aws-codepipeline-actions';
 import { Bucket, BucketEncryption } from '@aws-cdk/aws-s3';
@@ -12,29 +12,42 @@ export class PipelineStack extends cdk.Stack {
     super(scope, id, props);
 
     const accountId = this.account;
+    const region = this.region;
+
+    // Source
+    const gitRepo = "GIT_REPO_NAME"
+    const gitOwner = "GIT_REPO_OWNER"
+    const gitBranch = "GIT_BRANCH"
+    
+    // Git Connection
+    // Reference: https://docs.aws.amazon.com/codepipeline/latest/userguide/connections-github.html
+    const gitConnectionRegion = "ap-southeast-1"
+    const gitConnectionId = "XXXXX" 
 
     // Bucket for pipeline artifacts
     const pipelineArtifactBucket = new Bucket(this, 'CiCdPipelineArtifacts', {
       bucketName: `ci-cd-pipeline-artifacts-${accountId}`,
-      encryption: BucketEncryption.S3_MANAGED
+      encryption: BucketEncryption.S3_MANAGED,
+      autoDeleteObjects: true,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
     const apiArtifactBucket = new Bucket(this, 'ApiArtifacts', {
       bucketName: `books-api-artifacts-${accountId}`,
-      encryption: BucketEncryption.S3_MANAGED
+      encryption: BucketEncryption.S3_MANAGED,
+      autoDeleteObjects: true,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,      
     });
 
-    // Source (https://docs.aws.amazon.com/cdk/api/latest/docs/aws-codepipeline-actions-readme.html)
     const sourceArtifacts = new codepipeline.Artifact();
-    const sourceAction: GitHubSourceAction = new codepipeline_actions.GitHubSourceAction({
+    const sourceAction = new codepipeline_actions.CodeStarConnectionsSourceAction({
       actionName: 'Source',
-      owner: ssm.StringParameter.fromStringParameterName(this, 'GithubUsername', 'github_username').stringValue,
-      repo: 'aws-serverless-books-api-sample',
-      oauthToken: cdk.SecretValue.secretsManager('github_token', {jsonField: 'github_token'}),
-      output: sourceArtifacts,
-      branch: 'main',
-      trigger: codepipeline_actions.GitHubTrigger.WEBHOOK,
-      variablesNamespace: 'SourceVariables'
+      owner: gitOwner,
+      repo: gitRepo,
+      output: sourceArtifacts, 
+      branch: gitBranch,
+      connectionArn: `arn:aws:codestar-connections:${gitConnectionRegion}:${accountId}:connection/${gitConnectionId}`,
+      variablesNamespace: 'SourceVariables',
     });
 
     // Build
@@ -54,7 +67,7 @@ export class PipelineStack extends cdk.Stack {
       input: sourceArtifacts,
       environmentVariables: {
         S3_BUCKET: {value: apiArtifactBucket.bucketName},
-        GIT_BRANCH: {value: sourceAction.variables.branchName}
+        GIT_BRANCH: {value: gitBranch}
       },
       project: buildProject,
       variablesNamespace: 'BuildVariables',
@@ -73,7 +86,7 @@ export class PipelineStack extends cdk.Stack {
     apiArtifactBucket.grantRead(deployProject);
     deployProject.role?.addManagedPolicy({managedPolicyArn: 'arn:aws:iam::aws:policy/AWSCloudFormationFullAccess'});
     deployProject.role?.addManagedPolicy({managedPolicyArn: 'arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess'});
-    deployProject.role?.addManagedPolicy({managedPolicyArn: 'arn:aws:iam::aws:policy/AWSLambdaFullAccess'});
+    deployProject.role?.addManagedPolicy({managedPolicyArn: 'arn:aws:iam::aws:policy/AWSLambda_FullAccess'});
     deployProject.role?.addManagedPolicy({managedPolicyArn: 'arn:aws:iam::aws:policy/AmazonAPIGatewayAdministrator'});
     deployProject.role?.addManagedPolicy({managedPolicyArn: 'arn:aws:iam::aws:policy/IAMFullAccess'});
     deployProject.role?.addManagedPolicy({managedPolicyArn: 'arn:aws:iam::aws:policy/AWSCodeDeployFullAccess'});

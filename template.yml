@@ -29,6 +29,26 @@ Globals:
 
 Resources:
 
+  ApiGwAccountConfig:
+    Type: "AWS::ApiGateway::Account"
+    Properties:
+      CloudWatchRoleArn: !GetAtt "ApiGatewayLoggingRole.Arn"
+      
+  ApiGatewayLoggingRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - "apigateway.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Path: "/"
+      ManagedPolicyArns:
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
+        
   BooksApi:
     Type: AWS::Serverless::Api
     Properties:
@@ -54,7 +74,7 @@ Resources:
       Handler: index.handler
       AutoPublishAlias: !Ref Stage
       DeploymentPreference:
-        Type: !If [IsProduction, CustomLambdaLinear25PercentEvery1Minute, AllAtOnce]        
+        Type: !If [IsProduction, Linear10PercentEvery1Minute, AllAtOnce]        
         Alarms:
           - !Ref GetAllBooksAliasErrorMetricGreaterThanZeroAlarm
       Environment:
@@ -80,7 +100,7 @@ Resources:
       Handler: index.handler
       AutoPublishAlias: !Ref Stage
       DeploymentPreference:
-        Type: !If [IsProduction, CustomLambdaLinear25PercentEvery1Minute, AllAtOnce]
+        Type: !If [IsProduction, Linear10PercentEvery1Minute, AllAtOnce]
         Hooks:
           PreTraffic: !Ref CreateBookPreTraffic
         Alarms:

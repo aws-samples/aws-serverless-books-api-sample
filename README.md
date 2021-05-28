@@ -173,7 +173,7 @@ NOTES:
 * To successfully connect to Github:
   * You must create a git hub connection - [click here to learn more](https://docs.aws.amazon.com/codepipeline/latest/userguide/connections-github.html)
 * Build stage doesn't only generate our API artifacts, it also run a suite of unit tests for our AWS Lambda functions.
-* Change the variables gitRepo, gitOwner and gitBranch based on your git config
+* Change the variables `gitRepo`, `gitOwner` and `gitBranch` based on your git config.
 
 
   <p align="center">

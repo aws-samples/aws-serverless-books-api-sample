@@ -12,22 +12,33 @@ export class PipelineStack extends cdk.Stack {
     super(scope, id, props);
 
     const accountId = this.account;
-
-    // Bucket for pipeline artifacts
-    const pipelineArtifactBucket = new Bucket(this, 'CiCdPipelineArtifacts', {
-      bucketName: `ci-cd-pipeline-artifacts-${accountId}`,
-      encryption: BucketEncryption.S3_MANAGED
-    });
-
-    const apiArtifactBucket = new Bucket(this, 'ApiArtifacts', {
-      bucketName: `books-api-artifacts-${accountId}`,
-      encryption: BucketEncryption.S3_MANAGED
-    });
+    const region = this.region;
 
     // Source
     const gitRepo = "GIT_REPO_NAME"
     const gitOwner = "GIT_REPO_OWNER"
     const gitBranch = "GIT_BRANCH"
+    
+    // Git Connection
+    // Reference: https://docs.aws.amazon.com/codepipeline/latest/userguide/connections-github.html
+    const gitConnectionRegion = "ap-southeast-1"
+    const gitConnectionId = "XXXXX" 
+
+    // Bucket for pipeline artifacts
+    const pipelineArtifactBucket = new Bucket(this, 'CiCdPipelineArtifacts', {
+      bucketName: `ci-cd-pipeline-artifacts-${accountId}`,
+      encryption: BucketEncryption.S3_MANAGED,
+      autoDeleteObjects: true,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
+    const apiArtifactBucket = new Bucket(this, 'ApiArtifacts', {
+      bucketName: `books-api-artifacts-${accountId}`,
+      encryption: BucketEncryption.S3_MANAGED,
+      autoDeleteObjects: true,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,      
+    });
+
     const sourceArtifacts = new codepipeline.Artifact();
     const sourceAction = new codepipeline_actions.CodeStarConnectionsSourceAction({
       actionName: 'Source',
@@ -35,7 +46,7 @@ export class PipelineStack extends cdk.Stack {
       repo: gitRepo,
       output: sourceArtifacts, 
       branch: gitBranch,
-      connectionArn: 'arn:aws:codestar-connections:ap-southeast-1:585512738561:connection/d4127f97-aab8-4ac0-b95a-b7cf2bdc2d23',
+      connectionArn: `arn:aws:codestar-connections:${gitConnectionRegion}:${accountId}:connection/${gitConnectionId}`,
       variablesNamespace: 'SourceVariables',
     });
 

@@ -9,7 +9,7 @@
   "author": "Amazon Web Services",
   "license": "ISC",
   "dependencies": {
-    "aws-sdk": "^2.814.0",
+    "aws-sdk": "^2.1354.0",
     "axios":  ">=0.21.2",
     "uuid": "^8.3.1"
   },

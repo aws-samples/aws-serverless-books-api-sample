@@ -100,7 +100,7 @@ Resources:
       Handler: index.handler
       AutoPublishAlias: !Ref Stage
       DeploymentPreference:
-        Type: !If [IsProduction, Linear10PercentEvery1Minute, AllAtOnce]
+        Type: !If [IsProduction, LambdaLinear25PercentEvery1Minute, AllAtOnce]
         Hooks:
           PreTraffic: !Ref CreateBookPreTraffic
         Alarms:

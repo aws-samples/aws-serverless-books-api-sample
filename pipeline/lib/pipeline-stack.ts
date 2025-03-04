@@ -1,68 +1,62 @@
-import * as cdk from '@aws-cdk/core';
-import * as codebuild from '@aws-cdk/aws-codebuild';
-import * as codepipeline from '@aws-cdk/aws-codepipeline';
-import * as codepipeline_actions from '@aws-cdk/aws-codepipeline-actions';
+import { Construct } from 'constructs';
+import { RemovalPolicy, Stack, StackProps } from "aws-cdk-lib";
 
+import { Bucket, BucketEncryption } from 'aws-cdk-lib/aws-s3';
+import { StringParameter } from 'aws-cdk-lib/aws-ssm';
+import { CodeBuildAction, CodeStarConnectionsSourceAction, ManualApprovalAction } from 'aws-cdk-lib/aws-codepipeline-actions';
+import { Artifact, Pipeline } from 'aws-cdk-lib/aws-codepipeline';
+import { BuildSpec, LinuxBuildImage, PipelineProject } from 'aws-cdk-lib/aws-codebuild';
 
-import { CodeBuildAction, GitHubSourceAction, ManualApprovalAction } from '@aws-cdk/aws-codepipeline-actions';
-import { Bucket, BucketEncryption } from '@aws-cdk/aws-s3';
-
-export class PipelineStack extends cdk.Stack {
-  constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
+export class PipelineStack extends Stack {
+  constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
     const accountId = this.account;
-    const region = this.region;
 
     // Source
-    const gitRepo = "GIT_REPO_NAME"
-    const gitOwner = "GIT_REPO_OWNER"
-    const gitBranch = "GIT_BRANCH"
+    const gitOwner = 'jbernalvallejo';
+    const gitRepo = 'aws-serverless-books-api-sample';
+    const gitBranch = 'main';
     
-    // Git Connection
-    // Reference: https://docs.aws.amazon.com/codepipeline/latest/userguide/connections-github.html
-    const gitConnectionRegion = "ap-southeast-1"
-    const gitConnectionId = "XXXXX" 
-
     // Bucket for pipeline artifacts
     const pipelineArtifactBucket = new Bucket(this, 'CiCdPipelineArtifacts', {
       bucketName: `ci-cd-pipeline-artifacts-${accountId}`,
       encryption: BucketEncryption.S3_MANAGED,
       autoDeleteObjects: true,
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      removalPolicy: RemovalPolicy.DESTROY,
     });
 
     const apiArtifactBucket = new Bucket(this, 'ApiArtifacts', {
       bucketName: `books-api-artifacts-${accountId}`,
       encryption: BucketEncryption.S3_MANAGED,
       autoDeleteObjects: true,
-      removalPolicy: cdk.RemovalPolicy.DESTROY,      
+      removalPolicy: RemovalPolicy.DESTROY,      
     });
 
-    const sourceArtifacts = new codepipeline.Artifact();
-    const sourceAction = new codepipeline_actions.CodeStarConnectionsSourceAction({
+    const sourceArtifacts = new Artifact();
+    const sourceAction = new CodeStarConnectionsSourceAction({
       actionName: 'Source',
       owner: gitOwner,
       repo: gitRepo,
-      output: sourceArtifacts, 
       branch: gitBranch,
-      connectionArn: `arn:aws:codestar-connections:${gitConnectionRegion}:${accountId}:connection/${gitConnectionId}`,
+      connectionArn: StringParameter.fromStringParameterName(this, 'GithubConnectionArn', 'github_connection_arn').stringValue,
       variablesNamespace: 'SourceVariables',
+      output: sourceArtifacts
     });
 
     // Build
-    const buildProject = new codebuild.PipelineProject(this, 'CiCdBuild', {
-      buildSpec: codebuild.BuildSpec.fromSourceFilename('pipeline/buildspec.json'),
+    const buildProject = new PipelineProject(this, 'CiCdBuild', {
+      buildSpec: BuildSpec.fromSourceFilename('pipeline/buildspec.json'),
       environment: {
-        buildImage: codebuild.LinuxBuildImage.STANDARD_3_0
+        buildImage: LinuxBuildImage.STANDARD_7_0
       },
       projectName: 'books-api-build'
     });
 
     apiArtifactBucket.grantPut(buildProject);
 
-    const buildArtifacts = new codepipeline.Artifact();
-    const buildAction: CodeBuildAction = new codepipeline_actions.CodeBuildAction({
+    const buildArtifacts = new Artifact();
+    const buildAction: CodeBuildAction = new CodeBuildAction({
       actionName: 'Build',
       input: sourceArtifacts,
       environmentVariables: {
@@ -75,10 +69,10 @@ export class PipelineStack extends cdk.Stack {
     });
 
     // Deploy
-    const deployProject = new codebuild.PipelineProject(this, 'CiCdDeploy', {
-      buildSpec: codebuild.BuildSpec.fromSourceFilename('pipeline/buildspec-deploy.json'),
+    const deployProject = new PipelineProject(this, 'CiCdDeploy', {
+      buildSpec: BuildSpec.fromSourceFilename('pipeline/buildspec-deploy.json'),
       environment: {
-        buildImage: codebuild.LinuxBuildImage.STANDARD_3_0
+        buildImage: LinuxBuildImage.STANDARD_7_0
       },
       projectName: 'books-api-deploy'
     });
@@ -93,7 +87,7 @@ export class PipelineStack extends cdk.Stack {
     deployProject.role?.addManagedPolicy({managedPolicyArn: 'arn:aws:iam::aws:policy/AmazonCognitoPowerUser'});
 
     // Deploy to staging
-    const deployToStagingAction: CodeBuildAction = new codepipeline_actions.CodeBuildAction({
+    const deployToStagingAction: CodeBuildAction = new CodeBuildAction({
       actionName: 'Deploy',
       input: sourceArtifacts,
       environmentVariables: {
@@ -107,10 +101,10 @@ export class PipelineStack extends cdk.Stack {
     });
 
     // End to end tests
-    const testProject = new codebuild.PipelineProject(this, 'CiCdTest', {
-      buildSpec: codebuild.BuildSpec.fromSourceFilename('pipeline/buildspec-test.json'),
+    const testProject = new PipelineProject(this, 'CiCdTest', {
+      buildSpec: BuildSpec.fromSourceFilename('pipeline/buildspec-test.json'),
       environment: {
-        buildImage: codebuild.LinuxBuildImage.STANDARD_3_0
+        buildImage: LinuxBuildImage.STANDARD_7_0
       },
       projectName: 'books-api-test'
     });
@@ -118,7 +112,7 @@ export class PipelineStack extends cdk.Stack {
     testProject.role?.addManagedPolicy({managedPolicyArn: 'arn:aws:iam::aws:policy/AmazonCognitoPowerUser'});
     testProject.role?.addManagedPolicy({managedPolicyArn: 'arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess'});
 
-    const testAction: CodeBuildAction = new codepipeline_actions.CodeBuildAction({
+    const testAction: CodeBuildAction = new CodeBuildAction({
       actionName: 'Test',
       input: sourceArtifacts,
       environmentVariables: {
@@ -132,13 +126,13 @@ export class PipelineStack extends cdk.Stack {
     });
 
     // Deploy to production
-    const manualApprovalAction: ManualApprovalAction = new codepipeline_actions.ManualApprovalAction({
+    const manualApprovalAction: ManualApprovalAction = new ManualApprovalAction({
       actionName: 'Review',
       additionalInformation: 'Ensure Books API works correctly in Staging and release date is agreed with Product Owners',
       runOrder: 1
     });
 
-    const deployToProductionAction: CodeBuildAction = new codepipeline_actions.CodeBuildAction({
+    const deployToProductionAction: CodeBuildAction = new CodeBuildAction({
       actionName: 'Deploy',
       input: sourceArtifacts,
       environmentVariables: {
@@ -151,7 +145,7 @@ export class PipelineStack extends cdk.Stack {
     });
 
     // Pipeline
-    new codepipeline.Pipeline(this, 'CiCdPipeline', {
+    new Pipeline(this, 'CiCdPipeline', {
       pipelineName: 'BooksApi',
       artifactBucket: pipelineArtifactBucket,
       stages: [

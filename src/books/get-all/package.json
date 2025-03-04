@@ -19,8 +19,7 @@
     "@types/node": "^22.13.5",
     "@types/sinon": "^17.0.4",
     "@types/sinon-chai": "^3.2.12",
-    "@types/uuid": "^10.0.0",
-    "aws-sdk": "^2.1692.0",
+    "@types/uuid": "^10.0.0",    
     "aws-sdk-mock": "^5.1.0",
     "chai": "^4.2.0",
     "mocha": "^11.1.0",
@@ -31,6 +30,7 @@
     "uuid": "^11.1.0"
   },
   "dependencies": {
+    "aws-sdk": "^2.1692.0",
     "aws-xray-sdk-core": "^3.10.3"
   }
 }

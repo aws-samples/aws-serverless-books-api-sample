@@ -9,7 +9,7 @@
       "install": {
         "runtime-versions": {
           "python": 3.8,
-          "nodejs": 12
+          "nodejs": 22
         },
         "commands": [
           "pip3 install --upgrade aws-sam-cli"

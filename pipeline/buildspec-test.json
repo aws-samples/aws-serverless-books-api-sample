@@ -3,7 +3,7 @@
     "phases": {
       "install": {
         "runtime-versions": {
-          "nodejs": 12
+          "nodejs": 22
         },
         "commands": [
           "cd src/books/tests",

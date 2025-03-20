@@ -17,7 +17,8 @@
       },
       "pre_build": {
         "commands": [
-          "npm i -g recursive-install esbuild",
+          "npm i -g recursive-install",
+          "npm i -g esbuild",
           "npm-recursive-install --rootDir=src",
           "cd src/books/create",
           "npm test",

@@ -20,7 +20,7 @@ Globals:
     OpenApiVersion: 3.0.1 # to avoid default stage creation
   Function:
     Runtime: nodejs22.x
-    MemorySize: 128
+    MemorySize: 512
     Timeout: 5
     Tracing: Active
     Tags:
@@ -71,11 +71,12 @@ Resources:
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
+        Format: cjs
         Minify: true
         Target: "es2020"
         Sourcemap: false
         EntryPoints:
-          - index.ts    
+          - index.ts
     Properties:
       FunctionName: !Sub '${Stage}-books-get-all'
       CodeUri: src/books/get-all/
@@ -105,6 +106,7 @@ Resources:
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
+        Format: cjs
         Minify: true
         Target: "es2020"
         Sourcemap: false
@@ -207,6 +209,7 @@ Resources:
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
+        Format: cjs
         Minify: true
         Target: "es2020"
         Sourcemap: false

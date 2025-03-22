@@ -1,26 +1,19 @@
 {
-    "compilerOptions": {
-      "target": "ES2020",
-      "module": "commonjs",
-      "declaration": true,
-      "strict": true,
-      "noImplicitAny": false,
-      "strictNullChecks": true,
-      "noImplicitThis": true,
-      "alwaysStrict": true,
-      "noUnusedLocals": false,
-      "noUnusedParameters": false,
-      "noImplicitReturns": true,
-      "noFallthroughCasesInSwitch": false,
-      "inlineSourceMap": true,
-      "inlineSources": true,
-      "experimentalDecorators": true,
-      "strictPropertyInitialization":false,
-      "typeRoots": ["./node_modules/@types"]
-    },
-    "exclude": [
-      "node_modules",
-      "dist",
-      "**/*.spec.ts"
-    ]
-  }
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "rootDir": "./",
+    "strict": true,
+    "noImplicitAny": false,
+    "resolveJsonModule": true
+  },
+  "exclude": [
+    "node_modules",
+    "**/*.spec.ts",
+    "dist"
+  ]
+}
+

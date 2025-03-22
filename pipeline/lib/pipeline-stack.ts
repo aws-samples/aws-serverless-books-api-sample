@@ -14,7 +14,7 @@ export class PipelineStack extends Stack {
     const accountId = this.account;
 
     // Source
-    const gitOwner = 'aws-samples';
+    const gitOwner = 'jbernalvallejo';
     const gitRepo = 'aws-serverless-books-api-sample';
     const gitBranch = 'main';
     

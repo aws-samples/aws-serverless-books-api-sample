@@ -17,7 +17,7 @@
       },
       "pre_build": {
         "commands": [
-          "npm i -g recursive-install",
+          "npm i -g recursive-install esbuild",
           "npm-recursive-install --rootDir=src",
           "cd src/books/create",
           "npm test",
@@ -27,13 +27,8 @@
       },
       "build": {
         "commands": [
-          "cd ../create",
-          "npm run build",
-          "cd ../get-all",
-          "npm run build",
-          "cd ../create-pre-traffic",
-          "npm run build",
-          "cd ../../.."
+          "cd ../../..",
+          "sam build"          
         ]
       },
       "post_build": {

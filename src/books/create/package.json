@@ -13,7 +13,7 @@
   "author": "Amazon Web Services",
   "license": "ISC",
   "devDependencies": {
-"@types/aws-lambda": "^8.10.147",
+    "@types/aws-lambda": "^8.10.147",
     "@types/chai": "^4.3.17",
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.13.5",
@@ -21,6 +21,7 @@
     "@types/sinon-chai": "^3.2.12",
     "aws-sdk-mock": "^5.1.0",
     "chai": "^4.2.0",
+    "esbuild": "^0.25.1",
     "mocha": "^11.1.0",
     "sinon": "^19.0.2",
     "sinon-chai": "^3.5.0",

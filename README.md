@@ -58,6 +58,7 @@ AWS SAM template is defined in the root directory through a YAML file. It define
   * For staging, new versions are deployed to an alias named after the environment with a bluen/green approach.
   * For production, we use a more conservative approach that allows us to gradually shift traffic towards the new version. During the time this deployment lasts, each function has a CloudWatch alarm (with suffix `AliasErrorMetricGreaterThanZeroAlarm`) that monitors if the new version of the function throws errors, performing a rollback in case it does.
   * Only for the function creating a new book, its deployment performs a check (or smoke test) for the new version before shifting traffic to it through a Lambda function (`CreateBookPreTraffic`). If it fails, traffic is not routed to the new version and deployment is considered failed.
+* All Lambda functions are written in Typescript. Compiling options (through (esbuild)[https://esbuild.github.io/]) are defined through the `Metadata` section for each function.
 * DynamoDB table: `Books`.
 * Users that are allowed to create new books need to be registered in the `CognitoUserPool`. In order to get a token, we need to define a client and domain (instructions to manually get a token using Postman are explained below). Aformentioned client only supports the OAuth implicit grant.
   * In order to perform automated tests in staging and given how implicit grant works (through a web browser), only for this environment we will enable username and password auth so that we can get a token programatically and hence, be able to fully tests our endpoints. This also forces us to allow the `aws.cognito.signin.user.admin` scope (only scope that can be obtained when generating an access token through Cognito SDK).
@@ -65,6 +66,13 @@ AWS SAM template is defined in the root directory through a YAML file. It define
 ## Using SAM to deploy the app
 
 Packaging and deploying the app to AWS is relatively straight forward since all configuration is defined in `template.yml`.
+
+* Build your functions to prepare the application for subsequent steps in the development workflow, such as local testing or deploying to the AWS.
+
+  ```sh
+  npm install -g esbuild
+  sam build
+  ```
 
 * Package your Lambda functions and store them safely in a S3 bucket. This command outputs the corresponding version of your `template.yml` pointing to where your artifacts have been stored in S3.
   
@@ -80,7 +88,7 @@ Packaging and deploying the app to AWS is relatively straight forward since all 
 
   You can monitor how the deployment is happening through AWS CodeDeploy as the above will create a new application in this service alongside a deployment group for your function.
 
-These two commands will be used in both `Build` and `Deploy` steps of our pipeline.
+These three commands will be used in both `Build` and `Deploy` steps of our pipeline.
 
 ## Testing your lambda locally
 

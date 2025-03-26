@@ -20,7 +20,7 @@ Globals:
     OpenApiVersion: 3.0.1 # to avoid default stage creation
   Function:
     Runtime: nodejs22.x
-    MemorySize: 128
+    MemorySize: 512
     Timeout: 5
     Tracing: Active
     Tags:
@@ -68,9 +68,18 @@ Resources:
   
   GetAllBooks:
     Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Format: cjs
+        Minify: true
+        Target: "es2020"
+        Sourcemap: false
+        EntryPoints:
+          - index.ts
     Properties:
       FunctionName: !Sub '${Stage}-books-get-all'
-      CodeUri: ./src/books/get-all/dist/
+      CodeUri: src/books/get-all/
       Handler: index.handler
       AutoPublishAlias: !Ref Stage
       DeploymentPreference:
@@ -94,9 +103,18 @@ Resources:
   
   CreateBook:
     Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Format: cjs
+        Minify: true
+        Target: "es2020"
+        Sourcemap: false
+        EntryPoints:
+          - index.ts
     Properties:
       FunctionName: !Sub '${Stage}-books-create'
-      CodeUri: ./src/books/create/dist/
+      CodeUri: src/books/create/
       Handler: index.handler
       AutoPublishAlias: !Ref Stage
       DeploymentPreference:
@@ -188,9 +206,18 @@ Resources:
 
   CreateBookPreTraffic:
     Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Format: cjs
+        Minify: true
+        Target: "es2020"
+        Sourcemap: false
+        EntryPoints:
+          - index.ts
     Properties:
       FunctionName: !Sub 'CodeDeployHook_${Stage}-books-create-pre-traffic-check'
-      CodeUri: ./src/books/create-pre-traffic/dist/
+      CodeUri: src/books/create-pre-traffic/
       Handler: index.handler
       Environment:
         Variables:

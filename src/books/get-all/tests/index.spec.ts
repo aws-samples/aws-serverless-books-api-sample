@@ -60,12 +60,12 @@ describe('get all book tests', () => {
     for(let book of books) {
       expect(book).to.not.null;
       expect(uuidValidate(book.isbn)).to.be.true;
-      expect(book).to.have.property('title');
-      expect(book).to.have.property('year');
-      expect(book).to.have.property('author');
-      expect(book).to.have.property('publisher');
-      expect(book).to.have.property('rating');
-      expect(book).to.have.property('pages');
+      expect(book).to.have.property('title', 'a');
+      expect(book).to.have.property('year', 2000);
+      expect(book).to.have.property('author', 'b');
+      expect(book).to.have.property('publisher', 'c');
+      expect(book).to.have.property('rating', 5);
+      expect(book).to.have.property('pages', 100);
     }
   });
 
@@ -113,11 +113,11 @@ describe('get all book tests', () => {
     for (let i = 0; i < count; i++) {
       books.Items?.push({
         isbn: { S: uuidv4() },
-        title: { S: '1' },
+        title: { S: 'a' },
         year: { N: '2000' },
-        author: { S: '1' },
-        publisher: { S: '1' },
-        rating: { N: '1' },
+        author: { S: 'b' },
+        publisher: { S: 'c' },
+        rating: { N: '5' },
         pages: { N: '100' }
       });
     }

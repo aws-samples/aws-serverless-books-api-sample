@@ -4,8 +4,7 @@
   "description": "Lambda function to perform smoke test for book creation",
   "main": "index.js",
   "scripts": {
-    "build-dev": "tsc",
-    "build": "npm i && tsc && npm prune --production"
+    "build": "tsc"
   },
   "author": "Amazon Web Services",
   "license": "ISC",

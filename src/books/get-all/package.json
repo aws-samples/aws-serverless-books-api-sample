@@ -4,10 +4,7 @@
   "description": "Lambda function to get all books",
   "main": "index.js",
   "scripts": {
-    "prebuild": "mkdir -p dist",
-    "copy-deps": "cp -r node_modules dist",
-    "build-dev": "tsc",
-    "build": "npm run prebuild && npm i && tsc && npm prune --production && npm run copy-deps",
+    "build": "tsc",
     "test": "mocha -r ts-node/register ./tests/*.spec.ts"
   },
   "author": "Amazon Web Services",

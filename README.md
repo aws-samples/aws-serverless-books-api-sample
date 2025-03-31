@@ -10,6 +10,7 @@ For CI/CD it assumes there are two environments: staging and production. Pipelin
 - [Requirements](#requirements)
 - [Project Structure](#project-structure)
 - [Using SAM to deploy the app](#using-sam-to-deploy-the-app)
+- [Using SAM Accelerate for development](#using-sam-sync-for-development)
 - [Testing your lambda locally](#testing-your-lambda-locally)
 - [Monitoring](#monitoring)
 - [Tracing](#tracing)
@@ -89,6 +90,38 @@ Packaging and deploying the app to AWS is relatively straight forward since all 
   You can monitor how the deployment is happening through AWS CodeDeploy as the above will create a new application in this service alongside a deployment group for your function.
 
 These three commands will be used in both `Build` and `Deploy` steps of our pipeline.
+
+## Using SAM Accelerate for development
+
+[AWS SAM Accelerate](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/using-sam-cli-sync.html) provides a faster development experience by automatically syncing your local changes to the cloud. This is particularly useful during development as it eliminates the need to run the full build-package-deploy cycle for every code change you want to try out.
+
+* To sync all resources in your application to AWS:
+
+  ```sh
+  sam sync --stack-name <my-dev-stack>
+  ```
+
+* To sync only code changes for a specific Lambda function (e.g., CreateBook):
+
+  ```sh
+  sam sync --stack-name <my-dev-stack> --code --resource-id CreateBook
+  ```
+
+* To enable watch mode, which automatically syncs changes when files are modified:
+
+  ```sh
+  sam sync --stack-name <my-dev-stack> --watch 
+  ```
+
+* To watch only a specific Lambda function for changes (e.g., GetAllBooks):
+
+  ```sh
+  sam sync --stack-name my-stack-dev --watch --code --resource-id GetAllBooks
+  ```
+
+The watch mode is particularly useful during active development as it detects file changes and automatically syncs them to AWS without requiring manual intervention. This significantly speeds up the development cycle compared to traditional deployment methods.
+
+Note that `sam sync` is intended for development purposes only and not recommended for production deployments. For production, use CI/CD pipelines.
 
 ## Testing your lambda locally
 

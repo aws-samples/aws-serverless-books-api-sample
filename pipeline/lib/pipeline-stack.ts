@@ -21,14 +21,14 @@ export class PipelineStack extends Stack {
     
     // Bucket for pipeline artifacts
     const pipelineArtifactBucket = new Bucket(this, 'CiCdPipelineArtifacts', {
-      bucketName: `ci-cd-pipeline-artifacts-${accountId}`,
+      bucketName: `ci-cd-pipeline-artifacts-${accountId}-${this.region}`,
       encryption: BucketEncryption.S3_MANAGED,
       autoDeleteObjects: true,
       removalPolicy: RemovalPolicy.DESTROY,
     });
 
     const apiArtifactBucket = new Bucket(this, 'ApiArtifacts', {
-      bucketName: `books-api-artifacts-${accountId}`,
+      bucketName: `books-api-artifacts-${accountId}-${this.region}`,
       encryption: BucketEncryption.S3_MANAGED,
       autoDeleteObjects: true,
       removalPolicy: RemovalPolicy.DESTROY,      

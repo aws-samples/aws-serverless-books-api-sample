@@ -2,32 +2,27 @@
 // SPDX-License-Identifier: MIT-0
 
 import { APIGatewayProxyResult } from 'aws-lambda';
-import * as AWSCore from 'aws-sdk';
+import { DynamoDBClient, DynamoDBClientConfig, PutItemCommand } from '@aws-sdk/client-dynamodb';
 import * as AWSXRay from 'aws-xray-sdk-core';
 
-let AWS;
-
-const ddbOptions: AWSCore.DynamoDB.Types.ClientConfiguration = {
-  apiVersion: '2012-08-10'
-};
+const ddbOptions: DynamoDBClientConfig = {};
 
 // https://github.com/awslabs/aws-sam-cli/issues/217
 if (process.env.AWS_SAM_LOCAL) {
-  AWS = AWSCore;
   ddbOptions.endpoint = 'http://dynamodb:8000';
-} else {
-  AWS = AWSXRay.captureAWS(AWSCore);
 }
+
+const client = process.env.AWS_SAM_LOCAL
+  ? new DynamoDBClient(ddbOptions)
+  : AWSXRay.captureAWSv3Client(new DynamoDBClient(ddbOptions));
 
 async function handler(event: any): Promise<APIGatewayProxyResult> {
   let response: APIGatewayProxyResult;
   try {
-    const client = new AWS.DynamoDB(ddbOptions);
-
     const book = JSON.parse(event.body);
     const { isbn, title, year, author, publisher, rating, pages } = book;
 
-    const params: AWS.DynamoDB.Types.PutItemInput = {
+    const params = {
       TableName: process.env.TABLE || 'books',
       Item: {
         isbn: { S: isbn },
@@ -39,7 +34,7 @@ async function handler(event: any): Promise<APIGatewayProxyResult> {
         pages: { N: pages.toString() }
       }
     };
-    await client.putItem(params).promise();
+    await client.send(new PutItemCommand(params));
 
     response = {
       statusCode: 201,

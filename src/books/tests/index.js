@@ -5,14 +5,19 @@ const axios = require('axios');
 const { expect } = require('chai');
 
 const {v4: uuidv4} = require('uuid');
-const AWS = require('aws-sdk');
+const {
+  AdminCreateUserCommand,
+  AdminDeleteUserCommand,
+  AdminSetUserPasswordCommand,
+  CognitoIdentityProviderClient,
+  InitiateAuthCommand
+} = require('@aws-sdk/client-cognito-identity-provider');
 
 const manager = require('./books-manager');
 
 const region = process.env.AWS_REGION;
 
-const cognitoServiceProvider = new AWS.CognitoIdentityServiceProvider({
-  apiVersion: '2016-04-18',
+const cognitoServiceProvider = new CognitoIdentityProviderClient({
   region
 });
 
@@ -143,7 +148,7 @@ describe('End-to-end tests for Book API', () => {
         Name: 'email', Value: username
       }]
     };
-    const createUserResponse = await cognitoServiceProvider.adminCreateUser(createUserParams).promise();
+    const createUserResponse = await cognitoServiceProvider.send(new AdminCreateUserCommand(createUserParams));
     
     // confirm user
     const setPwParams = {
@@ -152,7 +157,7 @@ describe('End-to-end tests for Book API', () => {
       Password: password,
       Permanent: true
     };
-    await cognitoServiceProvider.adminSetUserPassword(setPwParams).promise();
+    await cognitoServiceProvider.send(new AdminSetUserPasswordCommand(setPwParams));
     
     return createUserResponse.User;
   }
@@ -166,7 +171,7 @@ describe('End-to-end tests for Book API', () => {
         'PASSWORD': password
       }
     }
-    const response = await cognitoServiceProvider.initiateAuth(params).promise();
+    const response = await cognitoServiceProvider.send(new InitiateAuthCommand(params));
     return response.AuthenticationResult.AccessToken;
   }
 
@@ -176,7 +181,7 @@ describe('End-to-end tests for Book API', () => {
       Username: username
     };
     
-    return cognitoServiceProvider.adminDeleteUser(deleteUserParams).promise();
+    return cognitoServiceProvider.send(new AdminDeleteUserCommand(deleteUserParams));
   }
 
   function buildBooks(count) {

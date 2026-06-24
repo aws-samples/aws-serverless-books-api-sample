@@ -9,6 +9,10 @@
     "watch": "tsc -w",
     "cdk": "cdk"
   },
+  "engines": {
+    "node": ">=24 <25",
+    "npm": ">=11 <12"
+  },
   "author": "Amazon Web Services",
   "license": "ISC",
   "devDependencies": {

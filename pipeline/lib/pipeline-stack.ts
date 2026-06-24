@@ -2,6 +2,7 @@ import { Construct } from 'constructs';
 import { RemovalPolicy, Stack, StackProps } from "aws-cdk-lib";
 
 import { Bucket, BucketEncryption } from 'aws-cdk-lib/aws-s3';
+import { ManagedPolicy } from 'aws-cdk-lib/aws-iam';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 import { CodeBuildAction, CodeStarConnectionsSourceAction, ManualApprovalAction } from 'aws-cdk-lib/aws-codepipeline-actions';
 import { Artifact, Pipeline } from 'aws-cdk-lib/aws-codepipeline';
@@ -20,14 +21,14 @@ export class PipelineStack extends Stack {
     
     // Bucket for pipeline artifacts
     const pipelineArtifactBucket = new Bucket(this, 'CiCdPipelineArtifacts', {
-      bucketName: `ci-cd-pipeline-artifacts-${accountId}`,
+      bucketName: `ci-cd-pipeline-artifacts-${accountId}-${this.region}`,
       encryption: BucketEncryption.S3_MANAGED,
       autoDeleteObjects: true,
       removalPolicy: RemovalPolicy.DESTROY,
     });
 
     const apiArtifactBucket = new Bucket(this, 'ApiArtifacts', {
-      bucketName: `books-api-artifacts-${accountId}`,
+      bucketName: `books-api-artifacts-${accountId}-${this.region}`,
       encryption: BucketEncryption.S3_MANAGED,
       autoDeleteObjects: true,
       removalPolicy: RemovalPolicy.DESTROY,      
@@ -78,13 +79,13 @@ export class PipelineStack extends Stack {
     });
 
     apiArtifactBucket.grantRead(deployProject);
-    deployProject.role?.addManagedPolicy({managedPolicyArn: 'arn:aws:iam::aws:policy/AWSCloudFormationFullAccess'});
-    deployProject.role?.addManagedPolicy({managedPolicyArn: 'arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess'});
-    deployProject.role?.addManagedPolicy({managedPolicyArn: 'arn:aws:iam::aws:policy/AWSLambda_FullAccess'});
-    deployProject.role?.addManagedPolicy({managedPolicyArn: 'arn:aws:iam::aws:policy/AmazonAPIGatewayAdministrator'});
-    deployProject.role?.addManagedPolicy({managedPolicyArn: 'arn:aws:iam::aws:policy/IAMFullAccess'});
-    deployProject.role?.addManagedPolicy({managedPolicyArn: 'arn:aws:iam::aws:policy/AWSCodeDeployFullAccess'});
-    deployProject.role?.addManagedPolicy({managedPolicyArn: 'arn:aws:iam::aws:policy/AmazonCognitoPowerUser'});
+    deployProject.role?.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('AWSCloudFormationFullAccess'));
+    deployProject.role?.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('AmazonDynamoDBFullAccess'));
+    deployProject.role?.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('AWSLambda_FullAccess'));
+    deployProject.role?.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('AmazonAPIGatewayAdministrator'));
+    deployProject.role?.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('IAMFullAccess'));
+    deployProject.role?.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('AWSCodeDeployFullAccess'));
+    deployProject.role?.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('AmazonCognitoPowerUser'));
 
     // Deploy to staging
     const deployToStagingAction: CodeBuildAction = new CodeBuildAction({
@@ -109,8 +110,8 @@ export class PipelineStack extends Stack {
       projectName: 'books-api-test'
     });
     
-    testProject.role?.addManagedPolicy({managedPolicyArn: 'arn:aws:iam::aws:policy/AmazonCognitoPowerUser'});
-    testProject.role?.addManagedPolicy({managedPolicyArn: 'arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess'});
+    testProject.role?.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('AmazonCognitoPowerUser'));
+    testProject.role?.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('AmazonDynamoDBFullAccess'));
 
     const testAction: CodeBuildAction = new CodeBuildAction({
       actionName: 'Test',

@@ -19,7 +19,7 @@ Globals:
   Api:
     OpenApiVersion: 3.0.1 # to avoid default stage creation
   Function:
-    Runtime: nodejs22.x
+    Runtime: nodejs24.x
     MemorySize: 512
     Timeout: 5
     Tracing: Active
@@ -81,7 +81,8 @@ Resources:
       FunctionName: !Sub '${Stage}-books-get-all'
       CodeUri: src/books/get-all/
       Handler: index.handler
-      AutoPublishAlias: !Ref Stage
+      AutoPublishAlias:
+        Ref: Stage
       DeploymentPreference:
         Type: !If [IsProduction, Linear10PercentEvery1Minute, AllAtOnce]        
         Alarms:
@@ -116,7 +117,8 @@ Resources:
       FunctionName: !Sub '${Stage}-books-create'
       CodeUri: src/books/create/
       Handler: index.handler
-      AutoPublishAlias: !Ref Stage
+      AutoPublishAlias:
+        Ref: Stage
       DeploymentPreference:
         Type: !If [IsProduction, Linear10PercentEvery1Minute, AllAtOnce]
         Hooks:

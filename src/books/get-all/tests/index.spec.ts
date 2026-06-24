@@ -2,15 +2,12 @@
 // SPDX-License-Identifier: MIT-0
 
 import * as chai from 'chai';
-import * as sinon from 'sinon';
-import * as sinonChai from 'sinon-chai';
+import { mockClient } from 'aws-sdk-client-mock';
+import { DynamoDBClient, ScanCommand, ScanCommandOutput } from '@aws-sdk/client-dynamodb';
 
-chai.use(sinonChai);
 const expect = chai.expect;
 
 import { v4 as uuidv4, validate as uuidValidate } from 'uuid';
-import * as AWSMock from 'aws-sdk-mock';
-import * as AWS from 'aws-sdk';
 
 import { handler } from '../index';
 
@@ -25,32 +22,24 @@ interface Book {
 };
 
 describe('get all book tests', () => {
-  let sandbox: sinon.SinonSandbox;
-  let dynamoDbStub;
+  const dynamoDbMock = mockClient(DynamoDBClient);
 
   beforeEach(() => {
-    sandbox = sinon.createSandbox();
-    AWSMock.setSDKInstance(AWS);
-  });
-
-  afterEach(() => {
-    AWSMock.restore('DynamoDB');
-    sandbox.restore();
+    dynamoDbMock.reset();
   });
 
   it('should get all books from dynamodb', async () => {
     // arrange
     const booksFromDb = buildDynamoDbBooks();
-    dynamoDbStub = sandbox.stub().callsFake((params, cb) => cb(null, booksFromDb));
-    AWSMock.mock('DynamoDB', 'scan', dynamoDbStub);
+    dynamoDbMock.on(ScanCommand).resolves(booksFromDb);
 
     // act
     const response = await handler();
 
     // assert
-    expect(dynamoDbStub).to.have.been.calledWith({
+    expect(dynamoDbMock.commandCalls(ScanCommand, {
       TableName: 'books'
-    });
+    })).to.have.length(1);
     expect(response).to.have.property('statusCode', 200);
     expect(response).to.have.deep.property('headers', { 'Content-Type': 'application/json' });
     expect(response).to.have.property('body');
@@ -71,16 +60,15 @@ describe('get all book tests', () => {
 
   it('should get no books from dynamodb', async () => {
     // arrange
-    dynamoDbStub = sandbox.stub().callsFake((params, cb) => cb(null, {Items:[]}));
-    AWSMock.mock('DynamoDB', 'scan', dynamoDbStub);
+    dynamoDbMock.on(ScanCommand).resolves({Items: []});
 
     // act
     const response = await handler();
 
     // assert
-    expect(dynamoDbStub).to.have.been.calledWith({
+    expect(dynamoDbMock.commandCalls(ScanCommand, {
       TableName: 'books'
-    });
+    })).to.have.length(1);
     expect(response).to.have.property('statusCode', 200);
     expect(response).to.have.deep.property('headers', { 'Content-Type': 'application/json' });
     expect(response).to.have.property('body');
@@ -91,16 +79,15 @@ describe('get all book tests', () => {
 
   it('should return an error if call to DynamoDB fails', async () => {
     // arrange
-    dynamoDbStub = sandbox.stub().callsFake((params, cb) => cb('Error'));
-    AWSMock.mock('DynamoDB', 'scan', dynamoDbStub);
+    dynamoDbMock.on(ScanCommand).rejects('Error');
     
     // act
     const response = await handler();
 
     // assert
-    expect(dynamoDbStub).to.have.been.calledWith({
+    expect(dynamoDbMock.commandCalls(ScanCommand, {
       TableName: 'books'
-    });
+    })).to.have.length(1);
     expect(response).to.deep.equal({
       statusCode: 500,
       headers: {},
@@ -109,7 +96,7 @@ describe('get all book tests', () => {
   });
 
   function buildDynamoDbBooks(count: number = 2) {
-    const books: AWS.DynamoDB.ScanOutput = { Items: [] };
+    const books: ScanCommandOutput = {$metadata: {}, Items: []};
     for (let i = 0; i < count; i++) {
       books.Items?.push({
         isbn: { S: uuidv4() },

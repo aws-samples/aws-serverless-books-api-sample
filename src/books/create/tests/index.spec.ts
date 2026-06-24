@@ -2,14 +2,10 @@
 // SPDX-License-Identifier: MIT-0
 
 import * as chai from 'chai';
-import * as sinon from 'sinon';
-import * as sinonChai from 'sinon-chai';
+import { mockClient } from 'aws-sdk-client-mock';
+import { DynamoDBClient, PutItemCommand } from '@aws-sdk/client-dynamodb';
 
-chai.use(sinonChai);
 const expect = chai.expect;
-
-import * as AWSMock from 'aws-sdk-mock';
-import * as AWS from 'aws-sdk';
 
 import {handler} from '../index';
 
@@ -24,23 +20,15 @@ interface Book {
 };
 
 describe('create book tests', () => {
-  let sandbox: sinon.SinonSandbox;
-  let dynamoDbStub;
+  const dynamoDbMock = mockClient(DynamoDBClient);
 
   beforeEach(() => {
-    sandbox = sinon.createSandbox();
-    AWSMock.setSDKInstance(AWS);    
-  });
-
-  afterEach(() => {
-    AWSMock.restore('DynamoDB');
-    sandbox.restore();
+    dynamoDbMock.reset();
   });
 
   it('should put a book into DynamoDB', async () => {
     // arrange
-    dynamoDbStub = sandbox.stub().callsFake((params, cb) => cb(null));
-    AWSMock.mock('DynamoDB', 'putItem', dynamoDbStub);
+    dynamoDbMock.on(PutItemCommand).resolves({});
     
     const book = buildBook();
     const event = {body: JSON.stringify(book)};
@@ -49,7 +37,7 @@ describe('create book tests', () => {
     const response = await handler(event);
 
     // assert
-    expect(dynamoDbStub).to.have.been.calledWith({
+    expect(dynamoDbMock.commandCalls(PutItemCommand, {
       TableName: 'books',
       Item: { 
           isbn: {S: book.isbn},
@@ -60,7 +48,7 @@ describe('create book tests', () => {
           rating: {N: book.rating.toString()},
           pages: {N: book.pages.toString()}
       }
-    });
+    })).to.have.length(1);
     expect(response).to.deep.equal({
       statusCode: 201,
       headers: {'Content-Type': 'application/json'},
@@ -70,8 +58,7 @@ describe('create book tests', () => {
 
   it('should return an error if event body is incorrect', async () => {
     // arrange
-    dynamoDbStub = sandbox.stub().callsFake((params, cb) => cb(null));
-    AWSMock.mock('DynamoDB', 'putItem', dynamoDbStub);
+    dynamoDbMock.on(PutItemCommand).resolves({});
     
     const invalidBook = {};
     const event = {body: JSON.stringify(invalidBook)};
@@ -80,7 +67,7 @@ describe('create book tests', () => {
     const response = await handler(event);
     
     // assert
-    expect(dynamoDbStub).to.not.have.been.called;
+    expect(dynamoDbMock.commandCalls(PutItemCommand)).to.have.length(0);
     expect(response).to.deep.equal({
       statusCode: 500,
       headers: {},
@@ -90,8 +77,7 @@ describe('create book tests', () => {
 
   it('should return an error if call to DynamoDB fails', async () => {
     // arrange
-    dynamoDbStub = sandbox.stub().callsFake((params, cb) => cb('Error'));
-    AWSMock.mock('DynamoDB', 'putItem', dynamoDbStub);
+    dynamoDbMock.on(PutItemCommand).rejects('Error');
     
     const book = buildBook();
     const event = {body: JSON.stringify(book)};
@@ -100,7 +86,7 @@ describe('create book tests', () => {
     const response = await handler(event);
 
     // assert
-    expect(dynamoDbStub).to.have.been.calledWith({
+    expect(dynamoDbMock.commandCalls(PutItemCommand, {
       TableName: 'books',
       Item: { 
           isbn: {S: book.isbn},
@@ -111,7 +97,7 @@ describe('create book tests', () => {
           rating: {N: book.rating.toString()},
           pages: {N: book.pages.toString()}
       }
-    });
+    })).to.have.length(1);
     expect(response).to.deep.equal({
       statusCode: 500,
       headers: {},

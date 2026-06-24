@@ -10,8 +10,9 @@ For CI/CD it assumes there are two environments: staging and production. Pipelin
 - [Requirements](#requirements)
 - [Project Structure](#project-structure)
 - [Using SAM to deploy the app](#using-sam-to-deploy-the-app)
-- [Using SAM Accelerate for development](#using-sam-sync-for-development)
+- [Using SAM Accelerate for development](#using-sam-accelerate-for-development)
 - [Testing your lambda locally](#testing-your-lambda-locally)
+- [Testing and verification](#testing-and-verification)
 - [Monitoring](#monitoring)
 - [Tracing](#tracing)
 - [CI/CD](#cicd)
@@ -25,12 +26,20 @@ Application is an RESTful API around the book resource. It currently supports an
 
 ## Requirements
 
-* [Node.js v22.6.0](https://nodejs.org/en/blog/release/v22.6.0/)
-* npm 10.9.2
+* [Node.js v24](https://nodejs.org/)
+* npm 11
 * [AWS SAM CLI 1.134.0](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html) or above.
 * [AWS CDK Toolkit](https://docs.aws.amazon.com/cdk/v2/guide/cli.html) 2.180.0 or above.
 * [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html). You must have run `aws configure` to set up your terminal.
 * [Create a Github Connection](https://docs.aws.amazon.com/codepipeline/latest/userguide/connections-github.html) to your repository and note down the connection ARN as you will need it in upcoming steps.
+
+Use the repository `.nvmrc` to select the expected Node.js version:
+
+```sh
+nvm use
+node --version
+npm --version
+```
 
 ## Project Structure
 
@@ -59,7 +68,8 @@ AWS SAM template is defined in the root directory through a YAML file. It define
   * For staging, new versions are deployed to an alias named after the environment with a bluen/green approach.
   * For production, we use a more conservative approach that allows us to gradually shift traffic towards the new version. During the time this deployment lasts, each function has a CloudWatch alarm (with suffix `AliasErrorMetricGreaterThanZeroAlarm`) that monitors if the new version of the function throws errors, performing a rollback in case it does.
   * Only for the function creating a new book, its deployment performs a check (or smoke test) for the new version before shifting traffic to it through a Lambda function (`CreateBookPreTraffic`). If it fails, traffic is not routed to the new version and deployment is considered failed.
-* All Lambda functions are written in Typescript. Compiling options (through (esbuild)[https://esbuild.github.io/]) are defined through the `Metadata` section for each function.
+* All Lambda functions are written in Typescript. Compiling options (through [esbuild](https://esbuild.github.io/)) are defined through the `Metadata` section for each function.
+* Lambda code uses explicit AWS SDK for JavaScript v3 packages such as `@aws-sdk/client-dynamodb`, rather than relying on a Lambda-bundled AWS SDK.
 * DynamoDB table: `Books`.
 * Users that are allowed to create new books need to be registered in the `CognitoUserPool`. In order to get a token, we need to define a client and domain (instructions to manually get a token using Postman are explained below). Aformentioned client only supports the OAuth implicit grant.
   * In order to perform automated tests in staging and given how implicit grant works (through a web browser), only for this environment we will enable username and password auth so that we can get a token programatically and hence, be able to fully tests our endpoints. This also forces us to allow the `aws.cognito.signin.user.admin` scope (only scope that can be obtained when generating an access token through Cognito SDK).
@@ -84,7 +94,7 @@ Packaging and deploying the app to AWS is relatively straight forward since all 
 * Deploy a new version of your app using the artifacts the command above just generated (using staging as the target environment for demo purposes):
 
   ```sh
-  sam deploy --template-file out.yml --stack-name my-stack-staging --parameter-overrides ParameterKey=Environment,ParameterValue=staging --capabilities CAPABILITY_IAM
+  sam deploy --template-file out.yml --stack-name my-stack-staging --parameter-overrides ParameterKey=Stage,ParameterValue=staging --capabilities CAPABILITY_IAM
   ```
 
   You can monitor how the deployment is happening through AWS CodeDeploy as the above will create a new application in this service alongside a deployment group for your function.
@@ -125,13 +135,10 @@ Note that `sam sync` is intended for development purposes only and not recommend
 
 ## Testing your lambda locally
 
-Create a docker network and run a local dynamodb container in it:
+Run a local DynamoDB container:
 
 ```sh
-docker network create my-network
-docker run -d --network my-network -v "$PWD":/dynamodb_local_db -p 8000:8000 \
-    --network-alias=dynamodb --name dynamodb \
-    amazon/dynamodb-local -jar DynamoDBLocal.jar -sharedDb
+docker run -d -p 8000:8000 --name dynamodb amazon/dynamodb-local -jar DynamoDBLocal.jar -sharedDb
 ```
 
 Create the following table in the local DynamoDB:
@@ -154,6 +161,8 @@ aws dynamodb describe-table --table-name books --endpoint-url http://localhost:8
 Finally, test your function with a dummy event (that can be generated with `sam local generate-event sqs receive-message`):
 
 ```sh
+docker network create my-network
+docker network connect my-network dynamodb
 sam local invoke CreateBook -e events/create-book-request.json --env-vars events/env.json --debug-port 5858 --docker-network my-network
 sam local invoke GetAllBooks -e events/get-all-books-request.json --env-vars events/env.json --debug-port 5858 --docker-network my-network
 ```
@@ -161,6 +170,30 @@ sam local invoke GetAllBooks -e events/get-all-books-request.json --env-vars eve
 Notice that our lambda functions will point to the local DynamoDB container for the command above through its HTTP layer. Condition is based on `AWS_SAM_LOCAL` which automatically gets set by `sam` when executing `local` commands. Similarly, integration with AWS X-Ray is only performed outside local environment.
 
 A very similar approach using Docker will be taken to perform end-to-end tests for our Lambda function and its integration with DynamoDB.
+
+If Docker is unavailable locally and you use Finch, use equivalent Finch commands for local validation. Keep CodeBuild scripts using Docker commands because Docker is available in CodeBuild standard images.
+
+## Testing and verification
+
+Run package-level checks from each package directory:
+
+```sh
+cd src/books/create && npm ci && npm test && npm run build && npm audit
+cd ../get-all && npm ci && npm test && npm run build && npm audit
+cd ../create-pre-traffic && npm ci && npm run build && npm audit
+cd ../tests && npm ci && npm test && npm audit
+```
+
+Run SAM and CDK checks from the repository root and `pipeline` package:
+
+```sh
+sam validate
+sam build
+cd pipeline
+npm ci
+npm run build
+cdk synth
+```
 
 ## Monitoring
 

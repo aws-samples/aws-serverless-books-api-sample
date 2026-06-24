@@ -1,16 +1,18 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
 
-import {CodeDeploy, Lambda, DynamoDB} from 'aws-sdk';
+import { CodeDeployClient, LifecycleEventStatus, PutLifecycleEventHookExecutionStatusCommand } from '@aws-sdk/client-codedeploy';
+import { DeleteItemCommand, DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
+import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
 
-const cdClient = new CodeDeploy({apiVersion: '2014-10-06'});
-const lambdaClient = new Lambda();
-const ddbClient = new DynamoDB({apiVersion: '2012-08-10'});
+const cdClient = new CodeDeployClient({});
+const lambdaClient = new LambdaClient({});
+const ddbClient = new DynamoDBClient({});
 
 const tableName = process.env.TABLE || 'books';
 
 exports.handler = async (event: any)  => {
-    let status = 'Succeeded';
+    let status: LifecycleEventStatus = LifecycleEventStatus.SUCCEEDED;
     try {
         console.log('Entering PreTraffic Hook!');
 
@@ -24,13 +26,13 @@ exports.handler = async (event: any)  => {
           body: JSON.stringify(book)
         }
 
-        const lParams: Lambda.Types.InvocationRequest = {
+        const lParams = {
             FunctionName: functionToTest,
             Payload: JSON.stringify(request)
         };
-        await lambdaClient.invoke(lParams).promise();
+        await lambdaClient.send(new InvokeCommand(lParams));
         
-        const ddbParams: DynamoDB.Types.GetItemInput = {
+        const ddbParams = {
             TableName: tableName,
             Key: {isbn: {S: book.isbn}},
             ConsistentRead: true
@@ -38,29 +40,31 @@ exports.handler = async (event: any)  => {
 
         console.log('DynamoDB getItem params', JSON.stringify(ddbParams, null, 2));
         await wait();
-        const {Item} = await ddbClient.getItem(ddbParams).promise();
+        const {Item} = await ddbClient.send(new GetItemCommand(ddbParams));
         console.log('DynamoDB item', JSON.stringify(Item, null, 2));
 
         if (!Item) {
             throw new Error('Test book not inserted in DynamoDB');
         }
 
-        delete ddbParams.ConsistentRead;
-        await ddbClient.deleteItem(ddbParams).promise();
+        await ddbClient.send(new DeleteItemCommand({
+            TableName: tableName,
+            Key: {isbn: {S: book.isbn}}
+        }));
         console.log('Test DynamoDB item deleted');
 
     } catch (e) {
         console.log(e);
-        status = 'Failed';
+        status = LifecycleEventStatus.FAILED;
     }
 
-    const cdParams: CodeDeploy.Types.PutLifecycleEventHookExecutionStatusInput = {
+    const cdParams = {
         deploymentId: event.DeploymentId,
         lifecycleEventHookExecutionId: event.LifecycleEventHookExecutionId,
         status
     };
 
-    return await cdClient.putLifecycleEventHookExecutionStatus(cdParams).promise();
+    return await cdClient.send(new PutLifecycleEventHookExecutionStatusCommand(cdParams));
 };
 
 function wait(ms?: number) {

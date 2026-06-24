@@ -6,15 +6,24 @@
   "scripts": {
     "test": "mocha index.js --timeout 5000"
   },
+  "engines": {
+    "node": ">=24 <25",
+    "npm": ">=11 <12"
+  },
   "author": "Amazon Web Services",
   "license": "ISC",
   "dependencies": {
-    "aws-sdk": "^2.1692.0",
+    "@aws-sdk/client-cognito-identity-provider": "^3.840.0",
+    "@aws-sdk/client-dynamodb": "^3.840.0",
     "axios": ">=1.8.3",
     "uuid": "^11.1.0"
   },
   "devDependencies": {
     "chai": "^4.2.0",
-    "mocha": "^11.1.0"
+    "mocha": "^11.7.6"
+  },
+  "overrides": {
+    "diff": "^9.0.0",
+    "serialize-javascript": "^7.0.6"
   }
 }

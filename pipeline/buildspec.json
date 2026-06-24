@@ -8,8 +8,8 @@
     "phases": {
       "install": {
         "runtime-versions": {
-          "python": 3.8,
-          "nodejs": 22
+          "python": 3.12,
+          "nodejs": 24
         },
         "commands": [
           "pip3 install --upgrade aws-sam-cli"

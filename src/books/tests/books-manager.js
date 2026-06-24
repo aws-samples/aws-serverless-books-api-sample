@@ -1,8 +1,8 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
 
-const AWS = require('aws-sdk');
-const client = new AWS.DynamoDB({ apiVersion: '2012-08-10' });
+const { BatchWriteItemCommand, DynamoDBClient, GetItemCommand } = require('@aws-sdk/client-dynamodb');
+const client = new DynamoDBClient({});
 
 const table = process.env.TABLE || 'books';
 
@@ -31,7 +31,7 @@ const save = async (books) => {
       }
     };
   
-    await client.batchWriteItem(params).promise();
+    await client.send(new BatchWriteItemCommand(params));
   } catch (e) {
     console.log('error saving test books into dynamodb', e);
     throw e;
@@ -58,7 +58,7 @@ const remove = async (books) => {
       }
     };
   
-    await client.batchWriteItem(params).promise();
+    await client.send(new BatchWriteItemCommand(params));
   } catch (e) {
     console.log('error removing test books from dynamodb', e);
     throw e;
@@ -74,7 +74,7 @@ const get = async book => {
       }
     };
   
-    const result = await client.getItem(params).promise();
+    const result = await client.send(new GetItemCommand(params));
     return {
       isbn: result.Item.isbn.S,
       title: result.Item.title.S,
@@ -100,4 +100,3 @@ exports.save = save;
 exports.remove = remove;
 exports.get = get;
 exports.findBookInList = find;
-
